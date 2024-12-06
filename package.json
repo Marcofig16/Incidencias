@@ -1,0 +1,21 @@
+{
+  "name": "pwa-spa-firebase",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --mode development",
+    "test": "vite --mode test",
+    "build": "vite build --mode production",
+    "preview": "vite preview",
+    "emulators:start": "firebase emulators:start"
+  },
+  "devDependencies": {
+    "vite": "^6.0.1",
+    "vite-plugin-pwa": "^0.21.1"
+  },
+  "dependencies": {
+    "bootstrap": "^5.3.3",
+    "firebase": "^11.0.2"
+  }
+}

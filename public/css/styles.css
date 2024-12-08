@@ -1,0 +1,20 @@
+/* Estilo para las tarjetas */
+#clientes-cards .card {
+    border: 1px solid #ddd;
+    border-radius: 0.5rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+#clientes-cards .card-title {
+font-size: 1.25rem;
+font-weight: bold;
+}
+
+/* Estilo para ocultar contenedores */
+.d-none {
+display: none !important;
+}
+
+.table-interactiva tr {
+cursor: pointer;
+}

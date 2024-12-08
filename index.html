@@ -7,6 +7,7 @@
 
   <!-- Bootstrap CSS desde CDN -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
   <nav class="navbar navbar-expand-lg navbar-light bg-light">
@@ -16,23 +17,55 @@
 
   <div id="app" class="container mt-5"></div>
 
-  <!-- Modal -->
-  <div class="modal fade" id="modalIncidencia" tabindex="-1" aria-labelledby="modalIncidenciaLabel" aria-hidden="true">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="modalIncidenciaLabel">Agregar Incidencia</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body">
-          <!-- Contenido dinámico -->
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-        </div>
+  <!-- Modal Mostrar Incidencias -->
+<div class="modal fade" id="modalIncidenciasCliente" tabindex="-1" aria-labelledby="modalIncidenciasLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="modalIncidenciasLabel">Incidencias del Cliente</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body">
+        <ul id="lista-incidencias" class="list-group">
+          <!-- Aquí se mostrarán las incidencias -->
+        </ul>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" id="btn-nueva-incidencia">Nueva Incidencia</button>
       </div>
     </div>
   </div>
+</div>
+
+<!-- Modal Crear Incidencia -->
+<div class="modal fade" id="modalCrearIncidencia" tabindex="-1" aria-labelledby="modalCrearIncidenciaLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="modalCrearIncidenciaLabel">Crear Incidencia</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body">
+        <!-- Formulario de crear incidencia -->
+        <form id="form-crear-incidencia">
+          <!-- Campos del formulario -->
+          <div class="mb-3">
+            <label for="titulo-incidencia" class="form-label">Título</label>
+            <input class="form-control" id="titulo-incidencia" rows="3"></input>
+          </div>
+          <div class="mb-3">
+            <label for="detalle-incidencia" class="form-label">Detalle</label>
+            <textarea class="form-control" id="detalle-incidencia" rows="3"></textarea>
+          </div>
+          <!-- Más campos según sea necesario -->
+          <div class="modal-footer">
+            <button type="submit" class="btn btn-primary">Guardar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
 
   <!-- Scripts -->
   <script type="module" src="./src/main.js"></script>

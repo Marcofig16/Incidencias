@@ -8,7 +8,7 @@
     "test": "vite --mode test",
     "build": "vite build --mode production",
     "preview": "vite preview",
-    "emulators:start": "firebase emulators:start"
+    "emulators": "firebase emulators:start --import=./emulator-data --export-on-exit"
   },
   "devDependencies": {
     "vite": "^6.0.1",

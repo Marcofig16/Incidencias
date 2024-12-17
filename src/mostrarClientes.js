@@ -1,7 +1,7 @@
 import { db } from "./firebase.js";
 import { collection, getDocs } from "firebase/firestore";
 import { renderAgregarCliente } from "./agregarCliente.js";
-import { abrirModalIncidenciasCliente } from "./modales.js";
+import { abrirFormularioIncidencia } from "./incidencias.js";
 
 export const renderTablaClientes = async () => {
   const app = document.getElementById("app");
@@ -28,9 +28,7 @@ export const renderTablaClientes = async () => {
         </thead>
         <tbody id="clientes-table-body">
           <tr>
-            <td colspan="4">
-              Cargando...
-            </td>
+            <td colspan="4">Cargando...</td>
           </tr>
         </tbody>
         <tfoot>
@@ -61,21 +59,25 @@ export const renderTablaClientes = async () => {
       snapshot.docs.forEach((doc) => {
         const cliente = doc.data();
 
-        // Agregar filas para la tabla
+        // Asegurar valores de ID y nombre
+        const clienteId = doc.id;
+        const clienteNombre = cliente.nombre || "N/A";
+
+        // Agregar filas a la tabla
         rows.push(`
-          <tr data-id="${doc.id}" data-nombre="${cliente.nombre || "N/A"}">
-            <td>${doc.id}</td>
-            <td>${cliente.nombre || "N/A"}</td>
+          <tr data-id="${clienteId}" data-nombre="${clienteNombre}">
+            <td>${cliente.codigo || clienteId}</td>
+            <td>${clienteNombre}</td>
             <td>${cliente.email || "N/A"}</td>
             <td>${cliente.telefono || "N/A"}</td>
           </tr>`);
 
         // Agregar tarjetas para vista móvil
         cards.push(`
-          <div class="card mb-3" data-id="${doc.id}" data-nombre="${cliente.nombre || "N/A"}">
+          <div class="card mb-3" data-id="${clienteId}" data-nombre="${clienteNombre}">
             <div class="card-body">
-              <h5 class="card-title">${cliente.nombre || "N/A"}</h5>
-              <p class="card-text"><strong>ID:</strong> ${doc.id}</p>
+              <h5 class="card-title">${clienteNombre}</h5>
+              <p class="card-text"><strong>ID:</strong> ${cliente.codigo || clienteId}</p>
               <p class="card-text"><strong>Email:</strong> ${cliente.email || "N/A"}</p>
               <p class="card-text"><strong>Teléfono:</strong> ${cliente.telefono || "N/A"}</p>
             </div>
@@ -86,18 +88,18 @@ export const renderTablaClientes = async () => {
       cardsContainer.innerHTML = cards.join("");
     } catch (error) {
       console.error("Error al cargar los clientes:", error);
-      tableBody.innerHTML = "<tr><td colspan='4'>Error al cargar datos</td></tr>";
-      cardsContainer.innerHTML = "<p>Error al cargar datos</p>";
+      tableBody.innerHTML = `<tr><td colspan='4' class="text-danger">Error al cargar los datos.</td></tr>`;
+      cardsContainer.innerHTML = `<p class="text-danger">Error al cargar los datos.</p>`;
     }
   };
 
-  // Delegación de eventos para tabla
+  // Delegación de eventos para la tabla
   tableBody.addEventListener("dblclick", (e) => {
     const row = e.target.closest("tr");
     if (row) {
       const id = row.dataset.id;
       const nombre = row.dataset.nombre;
-      abrirModalIncidenciasCliente(id, nombre); // Llama al modal intermedio
+      abrirFormularioIncidencia(id, nombre);
     }
   });
 
@@ -107,11 +109,11 @@ export const renderTablaClientes = async () => {
     if (card) {
       const id = card.dataset.id;
       const nombre = card.dataset.nombre;
-      abrirModalIncidenciasCliente(id, nombre); // Llama al modal intermedio
+      abrirFormularioIncidencia(id, nombre);
     }
   });
 
-  // Función para cambiar entre tabla y tarjetas según el tamaño de pantalla
+  // Ajustar vista entre tabla y tarjetas
   const ajustarVista = () => {
     if (window.innerWidth <= 576) {
       tableContainer.classList.add("d-none");
@@ -125,21 +127,19 @@ export const renderTablaClientes = async () => {
   window.addEventListener("resize", ajustarVista);
   ajustarVista();
 
-  // Verificar existencia del botón "Agregar Cliente"
+  // Botón para agregar cliente
   const btnAgregarCliente = document.getElementById("btn-agregar-cliente");
   if (btnAgregarCliente) {
     btnAgregarCliente.addEventListener("click", () => {
-      renderAgregarCliente(); // Cambia a la vista del formulario
+      renderAgregarCliente();
     });
-  } else {
-    console.error("El botón 'Agregar Cliente' no está disponible.");
   }
 
-  // Cargar los clientes
+  // Cargar los clientes al inicio
   await cargarClientes();
 };
 
-// Escuchar el evento DOMContentLoaded antes de ejecutar
+// Ejecutar la función principal al cargar el DOM
 document.addEventListener("DOMContentLoaded", () => {
   console.log("DOM completamente cargado.");
   renderTablaClientes();

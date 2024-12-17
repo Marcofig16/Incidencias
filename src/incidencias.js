@@ -1,80 +1,115 @@
 import { db } from "./firebase.js";
-import { addDoc, collection } from "firebase/firestore";
+import { addDoc, collection, query, orderBy, getDocs, serverTimestamp } from "firebase/firestore";
 
-export const abrirFormularioIncidencia = (clienteId, clienteNombre) => {
-  console.log("Método de abrir formulario de incidencias... Cargado!");
+// Función principal para abrir el formulario de incidencias
+export const abrirFormularioIncidencia = async (clienteId, clienteNombre) => {
+  console.log(`Cargando incidencias para el cliente: ${clienteNombre}`);
 
-  // Obtener el modal del DOM
+  // Obtener elementos del DOM
   const modalElement = document.getElementById("modalCrearIncidencia");
-  if (!modalElement) {
-    console.error("El modal 'modalCrearIncidencia' no existe en el DOM.");
-    return;
-  }
-
-  // Actualizar el título del modal
   const modalTitle = document.getElementById("modalCrearIncidenciaLabel");
-  if (!modalTitle) {
-    console.error("El elemento 'modalCrearIncidenciaLabel' no existe en el DOM.");
-    return;
-  }
-  modalTitle.textContent = `Agregar Incidencia para ${clienteNombre}`;
-
-  // Obtener el formulario y limpiar los campos
   const incidenciaForm = document.getElementById("form-crear-incidencia");
-  if (!incidenciaForm) {
-    console.error("El formulario 'form-crear-incidencia' no existe en el DOM.");
+  const listaIncidencias = document.getElementById("lista-incidencias");
+
+  // Verificar si los elementos existen
+  if (!modalElement || !modalTitle || !listaIncidencias || !incidenciaForm) {
+    console.error("Elementos del modal no encontrados.");
     return;
   }
-  incidenciaForm.reset();
 
-  // Crear y mostrar el modal
+  // Limpiar la lista de incidencias y formulario
+  listaIncidencias.innerHTML = `<li class="list-group-item">Cargando incidencias...</li>`;
+  incidenciaForm.reset();
+  modalTitle.textContent = `Incidencias de ${clienteNombre}`;
+
+  // Mostrar el modal
   const modal = new bootstrap.Modal(modalElement);
   modal.show();
 
-  // Evitar duplicación de eventos `submit`
-  incidenciaForm.removeEventListener("submit", handleSubmit);
-  incidenciaForm.addEventListener("submit", handleSubmit);
+  // Cargar el historial de incidencias
+  await cargarHistoricoIncidencias(clienteId);
 
-  // Función para manejar el envío del formulario
-  async function handleSubmit(e) {
+  // Manejar el envío de nuevas incidencias
+  incidenciaForm.onsubmit = async (e) => {
     e.preventDefault();
 
-    // Obtener los valores del formulario
-    const titulo_incidencia = document.getElementById("titulo-incidencia").value.trim();
-    const detalle_incidencia = document.getElementById("detalle-incidencia").value.trim();
-    const fecha = new Date().toISOString(); 
+    const titulo = document.getElementById("titulo-incidencia").value.trim();
+    const descripcion = document.getElementById("detalle-incidencia").value.trim();
 
-    if (!detalle_incidencia) {
-      alert("Por favor, escribe una descripción de la incidencia.");
+    if (!titulo || !descripcion) {
+      alert("Por favor, completa todos los campos.");
       return;
     }
 
-    // Referencia al botón de guardar
-    const guardarBtn = incidenciaForm.querySelector("button[type='submit']");
-    const originalText = guardarBtn.textContent;
-
     try {
-      // Deshabilitar el botón y mostrar el spinner
-      guardarBtn.disabled = true;
-      guardarBtn.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Guardando...`;
-
-      // Guardar incidencia en Firestore
-      await addDoc(collection(db, "incidencias"), {
-        clienteId,
-        titulo: titulo_incidencia,
-        descripcion: detalle_incidencia,
-        fecha,
+      // Guardar la nueva incidencia con estado "abierta" y fecha actual
+      await addDoc(collection(db, `clientes/${clienteId}/incidencias`), {
+        titulo,
+        descripcion,
+        status: "abierta", // Estado inicial
+        fecha: serverTimestamp(), // Fecha y hora actuales
       });
 
-      alert("Incidencia guardada correctamente.");
-      modal.hide();
+      alert("Incidencia agregada correctamente.");
+      await cargarHistoricoIncidencias(clienteId); // Recargar el historial
+      incidenciaForm.reset();
     } catch (error) {
-      console.error("Error al guardar la incidencia:", error);
-      alert("Hubo un error al guardar la incidencia. Intenta nuevamente.");
-    } finally {
-      // Restaurar el botón
-      guardarBtn.disabled = false;
-      guardarBtn.textContent = originalText;
+      console.error("Error al agregar la incidencia:", error);
+      alert("Error al agregar la incidencia.");
     }
+  };
+};
+
+// Función para cargar el historial de incidencias
+const cargarHistoricoIncidencias = async (clienteId) => {
+  const listaIncidencias = document.getElementById("lista-incidencias");
+
+  try {
+    // Verificar si el contenedor de incidencias existe
+    if (!listaIncidencias) {
+      console.error("No se encontró el contenedor 'lista-incidencias' en el DOM.");
+      return;
+    }
+
+    // Referencia a la colección de incidencias del cliente
+    const incidenciasRef = collection(db, `clientes/${clienteId}/incidencias`);
+    const q = query(incidenciasRef, orderBy("fecha", "desc"));
+    const querySnapshot = await getDocs(q);
+
+    // Limpiar el contenedor antes de agregar nuevos datos
+    listaIncidencias.innerHTML = "";
+
+    if (querySnapshot.empty) {
+      listaIncidencias.innerHTML = `<li class="list-group-item">No hay incidencias registradas.</li>`;
+    } else {
+      querySnapshot.forEach((docSnapshot) => {
+        const { titulo, descripcion, status = "abierta", fecha } = docSnapshot.data();
+
+        // Validar y formatear la fecha
+        let fechaFormateada = "Fecha no disponible";
+        if (fecha && fecha.toDate) {
+          fechaFormateada = fecha.toDate().toLocaleString();
+        }
+
+        // Determinar el color según el status
+        const statusColor = status === "abierta" ? "text-danger" : "text-success";
+
+        // Generar la lista de incidencias
+        listaIncidencias.innerHTML += `
+          <li class="list-group-item">
+            <div>
+              <strong class="${statusColor}">${titulo || "Sin título"} (${status.toUpperCase()})</strong><br>
+              ${descripcion || "Sin descripción"}<br>
+              <small class="text-muted">Fecha: ${fechaFormateada}</small>
+            </div>
+          </li>`;
+      });
+    }
+  } catch (error) {
+    console.error("Error al cargar el historial de incidencias:", error);
+    listaIncidencias.innerHTML = `
+      <li class="list-group-item text-danger">
+        Error al cargar las incidencias: ${error.message}
+      </li>`;
   }
 };

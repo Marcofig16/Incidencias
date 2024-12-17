@@ -9,6 +9,10 @@ export const renderAgregarCliente = () => {
   app.innerHTML = `
     <h2 class="text-center">Agregar Cliente</h2>
     <form id="nuevo-cliente-form" class="mb-4">
+    <div class="mb-3">
+        <label for="codigo" class="form-label">Codigo</label>
+        <input type="text" class="form-control" id="codigo" required>
+      </div>
       <div class="mb-3">
         <label for="nombre" class="form-label">Nombre</label>
         <input type="text" class="form-control" id="nombre" required>
@@ -32,12 +36,13 @@ export const renderAgregarCliente = () => {
   nuevoClienteForm.addEventListener("submit", async (e) => {
     e.preventDefault();
 
+    const codigo = document.getElementById("codigo").value;
     const nombre = document.getElementById("nombre").value;
     const email = document.getElementById("email").value;
     const telefono = document.getElementById("telefono").value;
 
     try {
-      await addDoc(collection(db, "clientes"), { nombre, email, telefono });
+      await addDoc(collection(db, "clientes"), { codigo, nombre, email, telefono });
       alert("Cliente agregado correctamente.");
       renderTablaClientes(); // Volver a la vista de la tabla
     } catch (error) {

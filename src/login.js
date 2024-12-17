@@ -1,5 +1,6 @@
-import { auth } from "./firebase.js";
+import { auth, db } from "./firebase.js";
 import { signInWithEmailAndPassword } from "firebase/auth";
+import { doc, getDoc } from "firebase/firestore";
 
 export const renderLogin = () => {
   const app = document.getElementById("app");
@@ -30,13 +31,34 @@ export const renderLogin = () => {
     const password = document.getElementById("password").value;
 
     try {
+      // Autenticación del usuario
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      console.log("Usuario autenticado:", userCredential.user);
-      errorMessage.textContent = "";
-      window.location.hash = "#/dashboard";
+      const user = userCredential.user;
+
+      // Obtener el rol del usuario desde Firestore
+      const userRef = doc(db, "usuarios", user.uid); // Referencia al documento del usuario
+      const userSnap = await getDoc(userRef);
+
+      if (userSnap.exists()) {
+        const userData = userSnap.data();
+        console.log("Usuario autenticado:", user.email, "Rol:", userData.rol);
+
+        // Guardar los datos del usuario en localStorage
+        localStorage.setItem("usuario", JSON.stringify({
+          uid: user.uid,
+          nombre: userData.nombre,
+          rol: userData.rol,
+          email: user.email
+        }));
+
+        errorMessage.textContent = "";
+        window.location.hash = "#/dashboard"; // Redirigir al dashboard
+      } else {
+        throw new Error("No se encontró información de rol en la base de datos.");
+      }
     } catch (error) {
       console.error("Error al iniciar sesión:", error.message);
-      errorMessage.textContent = "Credenciales incorrectas. Por favor, intenta de nuevo.";
+      errorMessage.textContent = "Credenciales incorrectas o sin permisos asignados.";
     }
   });
 };

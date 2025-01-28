@@ -27,8 +27,13 @@ export const renderLogin = () => {
   loginForm.addEventListener("submit", async (e) => {
     e.preventDefault();
 
-    const email = document.getElementById("email").value;
-    const password = document.getElementById("password").value;
+    const email = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value.trim();
+
+    if (!email || !password) {
+      errorMessage.textContent = "Por favor, complete todos los campos.";
+      return;
+    }
 
     try {
       // Autenticación del usuario
@@ -36,7 +41,7 @@ export const renderLogin = () => {
       const user = userCredential.user;
 
       // Obtener el rol del usuario desde Firestore
-      const userRef = doc(db, "usuarios", user.uid); // Referencia al documento del usuario
+      const userRef = doc(db, "usuarios", user.uid);
       const userSnap = await getDoc(userRef);
 
       if (userSnap.exists()) {
@@ -52,13 +57,35 @@ export const renderLogin = () => {
         }));
 
         errorMessage.textContent = "";
-        window.location.hash = "#/dashboard"; // Redirigir al dashboard
+
+        // Redirigir al módulo correspondiente según el rol
+        redirigirSegunRol(userData.rol);
       } else {
-        throw new Error("No se encontró información de rol en la base de datos.");
+        throw new Error("No se encontró información de rol para este usuario.");
       }
     } catch (error) {
       console.error("Error al iniciar sesión:", error.message);
-      errorMessage.textContent = "Credenciales incorrectas o sin permisos asignados.";
+      errorMessage.textContent = "Error al iniciar sesión: " + (error.message || "Intente nuevamente.");
     }
   });
+};
+
+// Función para redirigir a la vista correspondiente según el rol
+const redirigirSegunRol = (rol) => {
+  switch (rol) {
+    case "administrador":
+      import("./adminDashboard.js").then(({ renderAdminDashboard }) => {
+        renderAdminDashboard();
+      });
+      break;
+    case "interno":
+    case "externo":  // 🔥 Ambos roles van a mostrarClientes.js
+      import("./mostrarClientes.js").then(({ renderMostrarClientes }) => {
+        renderMostrarClientes();
+      });
+      break;
+    default:
+      console.error("Rol desconocido:", rol);
+      alert("Acceso denegado. Rol desconocido.");
+  }
 };

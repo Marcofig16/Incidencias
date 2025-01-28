@@ -1,5 +1,8 @@
 {
   "projects": {
-    "default": "pwa-spa-firebase"
-  }
+    "default": "incidencias-ai-test",
+    "test": "incidencias-ai-test"
+  },
+  "targets": {},
+  "etags": {}
 }

@@ -1,7 +1,6 @@
-// src/firebase.js
 import { initializeApp } from "firebase/app";
-import { getAuth, connectAuthEmulator } from "firebase/auth";
-import { getFirestore, connectFirestoreEmulator } from "firebase/firestore";
+import { getAuth, setPersistence, browserSessionPersistence } from "firebase/auth";
+import { getFirestore } from "firebase/firestore";
 
 // Configuración de Firebase
 const firebaseConfig = {
@@ -23,20 +22,19 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// Conectar a emuladores solo en entorno de desarrollo
-if (import.meta.env.VITE_ENV_NAME === "Development") {
-  console.log("Connecting to Firebase emulators...");
-
-  connectAuthEmulator(auth, import.meta.env.VITE_AUTH_EMULATOR_HOST);
-  connectFirestoreEmulator(
-    db,
-    import.meta.env.VITE_FIRESTORE_EMULATOR_HOST,
-    Number(import.meta.env.VITE_FIRESTORE_EMULATOR_PORT)
-  );
-
-  console.log("Connected to Firestore emulator in Development mode");
+// Configurar persistencia de sesión SOLO si no está ya autenticado
+if (!auth.currentUser) {
+  setPersistence(auth, browserSessionPersistence)
+    .then(() => {
+      console.log("Persistencia de sesión configurada en 'session'.");
+    })
+    .catch((error) => {
+      console.error("Error configurando la persistencia de sesión:", error);
+    });
 } else {
-  console.log("Connected to Firebase project:", import.meta.env.VITE_FIREBASE_PROJECT_ID);
+  console.log("Usuario ya autenticado, manteniendo sesión activa.");
 }
+
+console.log("Conectado al proyecto Firebase:", import.meta.env.VITE_FIREBASE_PROJECT_ID);
 
 export { app, auth, db };

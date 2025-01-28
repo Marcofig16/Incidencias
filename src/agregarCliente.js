@@ -2,57 +2,65 @@ import { db } from "./firebase.js";
 import { collection, addDoc } from "firebase/firestore";
 import { renderTablaClientes } from "./mostrarClientes.js";
 
-export const renderAgregarCliente = () => {
-  const app = document.getElementById("app");
+export const abrirFormularioAgregarCliente = (dashboardContent) => {
+  console.log("Abriendo formulario de Agregar Cliente");
 
-  // Estructura del formulario
-  app.innerHTML = `
-    <h2 class="text-center">Agregar Cliente</h2>
-    <form id="nuevo-cliente-form" class="mb-4">
-    <div class="mb-3">
-        <label for="codigo" class="form-label">Codigo</label>
-        <input type="text" class="form-control" id="codigo" required>
-      </div>
-      <div class="mb-3">
-        <label for="nombre" class="form-label">Nombre</label>
-        <input type="text" class="form-control" id="nombre" required>
-      </div>
-      <div class="mb-3">
-        <label for="email" class="form-label">Email</label>
-        <input type="email" class="form-control" id="email" required>
-      </div>
-      <div class="mb-3">
-        <label for="telefono" class="form-label">Teléfono</label>
-        <input type="text" class="form-control" id="telefono" required>
-      </div>
-      <button type="submit" class="btn btn-success w-100">Agregar Cliente</button>
-      <button type="button" id="btn-volver" class="btn btn-secondary w-100 mt-2">Volver</button>
-    </form>
-  `;
+  // Obtener elementos del modal
+  const modalElement = document.getElementById("modalAgregarCliente");
+  const modalTitle = document.getElementById("modalAgregarClienteLabel");
+  const agregarClienteForm = document.getElementById("form-agregar-cliente");
 
-  const nuevoClienteForm = document.getElementById("nuevo-cliente-form");
+  if (!modalElement || !modalTitle || !agregarClienteForm) {
+    console.error("Elementos del modal no encontrados. Verifica el HTML.");
+    return;
+  }
+
+  // Limpiar el formulario
+  agregarClienteForm.reset();
+  modalTitle.textContent = "Agregar Nuevo Cliente";
+
+  // Mostrar el modal
+  const modal = new bootstrap.Modal(modalElement);
+  modal.show();
 
   // Manejar el envío del formulario
-  nuevoClienteForm.addEventListener("submit", async (e) => {
+  agregarClienteForm.onsubmit = async (e) => {
     e.preventDefault();
 
-    const codigo = document.getElementById("codigo").value;
-    const nombre = document.getElementById("nombre").value;
-    const email = document.getElementById("email").value;
-    const telefono = document.getElementById("telefono").value;
+    const codigo = document.getElementById("codigo-cliente").value.trim();
+    const nombre = document.getElementById("nombre-cliente").value.trim();
+    const email = document.getElementById("email-cliente").value.trim();
+    const telefono = document.getElementById("telefono-cliente").value.trim();
+    const empresa = document.getElementById("empresa-cliente").value.trim(); // Nuevo campo Empresa
+
+    if (!codigo || !nombre || !email || !telefono || !empresa) {
+      alert("Por favor, completa todos los campos.");
+      return;
+    }
 
     try {
-      await addDoc(collection(db, "clientes"), { codigo, nombre, email, telefono });
+      // Guardar el nuevo cliente en Firestore
+      await addDoc(collection(db, "clientes"), { codigo, nombre, email, telefono, empresa });
+
+      // Mostrar mensaje de éxito
       alert("Cliente agregado correctamente.");
-      renderTablaClientes(); // Volver a la vista de la tabla
+
+      // Cerrar el modal
+      modal.hide();
+
+      // Actualizar la tabla de clientes después de cerrar el modal
+      modalElement.addEventListener(
+        "hidden.bs.modal",
+        () => {
+          if (dashboardContent) {
+            renderTablaClientes(dashboardContent);
+          }
+        },
+        { once: true } // Escucha el evento una sola vez
+      );
     } catch (error) {
       console.error("Error al agregar el cliente:", error);
-      alert("Hubo un problema al agregar el cliente. Intenta nuevamente.");
+      alert("Error al agregar el cliente.");
     }
-  });
-
-  // Botón para volver a la tabla de clientes
-  document.getElementById("btn-volver").addEventListener("click", () => {
-    renderTablaClientes();
-  });
+  };
 };

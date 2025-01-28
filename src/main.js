@@ -1,94 +1,120 @@
-import { renderTablaClientes } from "./mostrarClientes.js";
-import { auth } from "./firebase.js";
-import { signInWithEmailAndPassword, signOut } from "firebase/auth";
+import { auth, db } from "./firebase.js";
+import { doc, getDoc } from "firebase/firestore";
+import { signOut, onAuthStateChanged } from "firebase/auth";
+import { renderAdminDashboard } from "./adminDashboard.js";
+import { renderInternalDashboard } from "./internalDashboard.js";
+import { renderExternalDashboard } from "./externalDashboard.js";
+import { renderLogin } from "./login.js";
 
 document.addEventListener("DOMContentLoaded", () => {
   console.log("DOM completamente cargado.");
+  window.usuarioActual = null; // No cargar usuario automáticamente
 
-  // Renderizar Login
-  const renderLogin = () => {
+  // 🔹 Iniciar mostrando el login en limpio SIEMPRE
+  renderLogin();
+
+  // 🔹 Función para renderizar el dashboard según el rol del usuario
+  const renderDashboard = (rol) => {
     const app = document.getElementById("app");
-    if (!app) {
-      console.error("No se encontró el contenedor 'app' en el DOM.");
-      return;
-    }
+    if (!app) return;
 
     app.innerHTML = `
-      <h2 class="text-center">Iniciar Sesión</h2>
-      <form id="login-form" class="mt-3">
-        <div class="mb-3">
-          <label for="email" class="form-label">Correo Electrónico</label>
-          <input type="email" class="form-control" id="email" required>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <div>
+          <p id="userInfo">Usuario: ${window.usuarioActual?.email || "Desconocido"} (${rol || "Sin rol"})</p>
+          <p id="datetime"></p>
         </div>
-        <div class="mb-3">
-          <label for="password" class="form-label">Contraseña</label>
-          <input type="password" class="form-control" id="password" required>
-        </div>
-        <button type="submit" class="btn btn-primary w-100">Ingresar</button>
-      </form>
-      <div id="error-message" class="text-danger mt-3"></div>
+        <button id="logout-button" class="btn btn-danger">Cerrar Sesión</button>
+      </div>
+      <div id="dashboard-content" class="mt-4"></div>
     `;
 
-    const loginForm = document.getElementById("login-form");
-    const errorMessage = document.getElementById("error-message");
+    document.getElementById("logout-button").addEventListener("click", cerrarSesion);
 
-    if (!loginForm || !errorMessage) {
-      console.error("No se encontraron los elementos del formulario en el DOM.");
+    const datetimeElement = document.getElementById("datetime");
+    if (datetimeElement) {
+      const updateDateTime = () => {
+        datetimeElement.innerText = `Fecha y hora: ${new Date().toLocaleString()}`;
+      };
+      updateDateTime();
+      setInterval(updateDateTime, 1000);
+    }
+
+    const dashboardContent = document.getElementById("dashboard-content");
+    if (!rol) {
+      console.error("Rol no definido, cerrando sesión...");
+      alert("Error: No se encontró rol para este usuario.");
+      cerrarSesion();
       return;
     }
 
-    loginForm.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const email = document.getElementById("email").value;
-      const password = document.getElementById("password").value;
-
-      try {
-        const userCredential = await signInWithEmailAndPassword(auth, email, password);
-        const user = userCredential.user;
-
-        console.log(`Usuario autenticado: ${user.email}`);
-        renderDashboard();
-      } catch (error) {
-        console.error("Error al iniciar sesión:", error.message);
-        errorMessage.textContent = "Credenciales incorrectas. Por favor, intenta de nuevo.";
-      }
-    });
-  };
-
-  // Renderizar el Dashboard
-  const renderDashboard = () => {
-    const app = document.getElementById("app");
-    if (!app) {
-      console.error("No se encontró el contenedor 'app' en el DOM.");
-      return;
-    }
-
-    app.innerHTML = `
-      <h2 class="text-center">Listado de Clientes</h2>
-      <div id="clientes-container" class="mt-4"></div>
-      <button id="logout-button" class="btn btn-danger mt-3">Cerrar Sesión</button>
-    `;
-
-    renderTablaClientes(); // Cargar tabla de clientes
-
-    const logoutButton = document.getElementById("logout-button");
-    if (logoutButton) {
-      logoutButton.addEventListener("click", cerrarSesion);
-    } else {
-      console.error("No se encontró el botón de cerrar sesión en el DOM.");
+    switch (rol) {
+      case "administrador":
+        renderAdminDashboard(dashboardContent);
+        break;
+      case "interno":
+        renderInternalDashboard(dashboardContent);
+        break;
+      case "externo":
+        renderExternalDashboard(dashboardContent);
+        break;
+      default:
+        console.error("Rol desconocido:", rol);
+        dashboardContent.innerHTML = `<p class="text-danger">Acceso denegado. Rol desconocido.</p>`;
     }
   };
 
-  // Cerrar sesión
+  // 🔹 Función para cerrar sesión
   const cerrarSesion = async () => {
     try {
       await signOut(auth);
-      window.location.reload();
+      localStorage.removeItem("usuario");
+      window.usuarioActual = null;
+      console.log("Sesión cerrada");
+      renderLogin();
     } catch (error) {
       console.error("Error al cerrar sesión:", error.message);
     }
   };
 
-  // Iniciar la aplicación
-  renderLogin();
+  // 🔹 Escuchar cambios en la autenticación
+  onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      console.log("Usuario autenticado:", user.email);
+
+      try {
+        const userRef = doc(db, "usuarios", user.uid);
+        const userSnap = await getDoc(userRef);
+
+        if (userSnap.exists()) {
+          const userData = userSnap.data();
+          if (!userData.rol) {
+            console.error("El usuario no tiene rol asignado.");
+            alert("Error: No tienes permisos para acceder.");
+            cerrarSesion();
+            return;
+          }
+
+          window.usuarioActual = {
+            uid: user.uid,
+            email: user.email,
+            rol: userData.rol,
+            nombre: userData.nombre,
+          };
+
+          console.log("Redirigiendo al dashboard...");
+          renderDashboard(userData.rol);
+        } else {
+          console.error("No se encontró información del usuario en Firestore.");
+          alert("Error: No tienes permisos para acceder.");
+          cerrarSesion();
+        }
+      } catch (error) {
+        console.error("Error al obtener los datos del usuario:", error);
+        cerrarSesion();
+      }
+    } else {
+      console.log("No hay usuario autenticado.");
+    }
+  });
 });

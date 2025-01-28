@@ -22,3 +22,11 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+# Node modules
+node_modules/
+
+# Firebase config (si es necesario mantenerlo privado)
+firebase-config.js
+
+# Archivos de entorno
+.env

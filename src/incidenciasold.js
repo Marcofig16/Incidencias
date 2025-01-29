@@ -12,9 +12,9 @@ import {
 } from "firebase/firestore";
 
 // Función principal para abrir el formulario de incidencias
-export const abrirFormularioIncidencia = async (clienteId, clienteNombre) => {
+export const abrirFormularioIncidencia = async (clienteId, clienteNombre, usuarioActual) => {
   console.log(`Cargando incidencias para el cliente: ${clienteNombre}`);
-  console.log(`Usuario actual: ${window.usuarioActual?.email || "Desconocido"}`);
+  console.log(`Usuario actual: ${usuarioActual}`);
 
   // Obtener elementos del DOM
   const modalElement = document.getElementById("modalCrearIncidencia");
@@ -48,7 +48,7 @@ export const abrirFormularioIncidencia = async (clienteId, clienteNombre) => {
   modal.show();
 
   // Cargar el historial de incidencias
-  await cargarHistoricoIncidencias(clienteId);
+  await cargarHistoricoIncidencias(clienteId, usuarioActual);
 
   // Manejar el envío de nuevas incidencias
   incidenciaForm.onsubmit = async (e) => {
@@ -68,12 +68,12 @@ export const abrirFormularioIncidencia = async (clienteId, clienteNombre) => {
         descripcion,
         status: "abierta",
         fecha: serverTimestamp(),
-        usuario: window.usuarioActual?.email || "Usuario desconocido",
+        usuario: usuarioActual || "Usuario desconocido",
         notas: [],
       });
 
       alert("Incidencia agregada correctamente.");
-      await cargarHistoricoIncidencias(clienteId);
+      await cargarHistoricoIncidencias(clienteId, usuarioActual);
       incidenciaForm.reset();
     } catch (error) {
       console.error("Error al agregar la incidencia:", error.message);
@@ -89,7 +89,7 @@ export const abrirFormularioIncidencia = async (clienteId, clienteNombre) => {
 };
 
 // Función para cargar el historial de incidencias
-const cargarHistoricoIncidencias = async (clienteId) => {
+const cargarHistoricoIncidencias = async (clienteId, usuarioActual) => {
   const listaIncidencias = document.getElementById("lista-incidencias");
 
   try {
@@ -131,8 +131,8 @@ const cargarHistoricoIncidencias = async (clienteId) => {
                 ${notasHTML || "<li class='list-group-item'>No hay notas registradas.</li>"}
               </ul>
               ${status === "abierta" ? `
-                <button class="btn btn-primary btn-sm mt-2" onclick="abrirAgregarNota('${clienteId}', '${incidenciaId}')">Agregar Nota</button>
-                <button class="btn btn-success btn-sm mt-2" onclick="marcarResuelta('${clienteId}', '${incidenciaId}')">Resuelta</button>
+                <button class="btn btn-primary btn-sm mt-2" onclick="abrirAgregarNota('${clienteId}', '${incidenciaId}', '${usuarioActual}')">Agregar Nota</button>
+                <button class="btn btn-success btn-sm mt-2" onclick="marcarResuelta('${clienteId}', '${incidenciaId}', '${usuarioActual}')">Resuelta</button>
               ` : ""}
             </div>
           </li>
@@ -149,7 +149,7 @@ const cargarHistoricoIncidencias = async (clienteId) => {
 };
 
 // Función para agregar una nueva nota a una incidencia
-const abrirAgregarNota = async (clienteId, incidenciaId) => {
+const abrirAgregarNota = async (clienteId, incidenciaId, usuarioActual) => {
   const nuevaNota = prompt("Escribe la nueva nota:");
 
   if (!nuevaNota || nuevaNota.trim() === "") {
@@ -162,12 +162,12 @@ const abrirAgregarNota = async (clienteId, incidenciaId) => {
     await updateDoc(incidenciaRef, {
       notas: arrayUnion({
         texto: nuevaNota,
-        usuario: window.usuarioActual?.email || "Usuario desconocido",
+        usuario: usuarioActual || "Usuario desconocido",
         fecha: new Date().toLocaleString(),
       }),
     });
     alert("Nota agregada correctamente.");
-    await cargarHistoricoIncidencias(clienteId);
+    await cargarHistoricoIncidencias(clienteId, usuarioActual);
   } catch (error) {
     console.error("Error al agregar la nota:", error.message);
     alert(`Error al agregar la nota: ${error.message}`);
@@ -175,23 +175,22 @@ const abrirAgregarNota = async (clienteId, incidenciaId) => {
 };
 
 // Función para marcar una incidencia como resuelta
-const marcarResuelta = async (clienteId, incidenciaId) => {
+const marcarResuelta = async (clienteId, incidenciaId, usuarioActual) => {
   try {
     const incidenciaRef = doc(db, `clientes/${clienteId}/incidencias/${incidenciaId}`);
     await updateDoc(incidenciaRef, {
       status: "resuelta",
-      usuario: window.usuarioActual?.email || "Usuario desconocido",
+      usuario: usuarioActual || "Usuario desconocido",
       fecha: serverTimestamp(),
     });
-
     alert("Incidencia marcada como resuelta.");
-    await cargarHistoricoIncidencias(clienteId);
+    await cargarHistoricoIncidencias(clienteId, usuarioActual);
   } catch (error) {
     console.error("Error al marcar incidencia como resuelta:", error.message);
     alert(`Error al marcar incidencia como resuelta: ${error.message}`);
   }
 };
 
-// Exportar funciones globalmente
+// Exportar las funciones necesarias globalmente
 window.abrirAgregarNota = abrirAgregarNota;
 window.marcarResuelta = marcarResuelta;

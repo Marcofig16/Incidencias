@@ -17,13 +17,10 @@ export const renderTablaClientes = async (dashboardContent) => {
     dashboardContent.appendChild(tablaClientes);
   }
 
-  // Restaurar el botón "Volver al Panel" en su ubicación original
+  // Limpiar el contenido actual y renderizar la tabla
   tablaClientes.innerHTML = `
-    <div class="d-flex justify-content-start mb-4">
-      <button id="btn-volver-panel" class="btn btn-secondary">Volver al Panel</button>
-      <button id="btn-agregar-cliente" class="btn btn-primary ms-3">Agregar Cliente</button>
-    </div>
     <h2 class="text-center">Lista de Clientes</h2>
+    <button id="btn-agregar-cliente" class="btn btn-primary mb-4">Agregar Cliente</button>
     <div id="clientes-container" class="table-responsive">
       <table id="clientes-table" class="table table-striped table-sm mt-4 table-hover table-interactiva">
         <thead>
@@ -32,13 +29,12 @@ export const renderTablaClientes = async (dashboardContent) => {
             <th>Nombre</th>
             <th>Email</th>
             <th>Teléfono</th>
-            <th>Empresa</th>
             <th>Incidencias</th>
           </tr>
         </thead>
         <tbody id="clientes-table-body">
           <tr>
-            <td colspan="6">Cargando...</td>
+            <td colspan="5">Cargando...</td>
           </tr>
         </tbody>
       </table>
@@ -47,14 +43,6 @@ export const renderTablaClientes = async (dashboardContent) => {
 
   const tableBody = document.getElementById("clientes-table-body");
   const btnAgregarCliente = document.getElementById("btn-agregar-cliente");
-  const btnVolverPanel = document.getElementById("btn-volver-panel");
-
-  // Manejar la acción del botón "Volver al Panel"
-  if (btnVolverPanel) {
-    btnVolverPanel.addEventListener("click", () => {
-      window.location.href = "dashboard.html"; // Asegúrate de que la URL sea correcta
-    });
-  }
 
   // Función para cargar clientes desde Firestore
   const cargarClientes = async () => {
@@ -78,7 +66,6 @@ export const renderTablaClientes = async (dashboardContent) => {
             <td>${clienteNombre}</td>
             <td>${cliente.email || "N/A"}</td>
             <td>${cliente.telefono || "N/A"}</td>
-            <td>${cliente.empresa || "N/A"}</td>
             <td>${estadoIncidencias}</td>
           </tr>
         `);
@@ -98,12 +85,12 @@ export const renderTablaClientes = async (dashboardContent) => {
             return;
           }
 
-          abrirFormularioIncidencia(id, nombre, window.usuarioActual);
+          abrirFormularioIncidencia(id, nombre, window.usuarioActual); // Pasamos el usuario actual
         });
       });
     } catch (error) {
       console.error("Error al cargar los clientes:", error);
-      tableBody.innerHTML = `<tr><td colspan="6" class="text-danger">Error al cargar los datos.</td></tr>`;
+      tableBody.innerHTML = `<tr><td colspan="5" class="text-danger">Error al cargar los datos.</td></tr>`;
     }
   };
 
@@ -141,7 +128,7 @@ export const renderTablaClientes = async (dashboardContent) => {
   // Evento para el botón "Agregar Cliente"
   if (btnAgregarCliente) {
     btnAgregarCliente.addEventListener("click", () => {
-      abrirFormularioAgregarCliente(dashboardContent);
+      abrirFormularioAgregarCliente(dashboardContent); // Pasamos el contenedor principal
     });
   }
 

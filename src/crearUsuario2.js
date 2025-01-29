@@ -30,7 +30,7 @@ export const renderCrearUsuario = (dashboardContent) => {
       </div>
       <button type="submit" class="btn btn-success w-100">Crear Usuario</button>
     </form>
-    <button id="volver-panel" class="btn btn-secondary w-100 mt-3">Volver</button>
+    <button id="volver-panel" class="btn btn-secondary w-100 mt-3">Volver al Panel</button>
   `;
 
   const form = document.getElementById("crear-usuario-form");
@@ -44,12 +44,15 @@ export const renderCrearUsuario = (dashboardContent) => {
     const rol = document.getElementById("rol").value;
 
     try {
-      // 🔥 Evitar cambio de sesión
-      window.evitarRedireccion = true;
+      const adminUser = auth.currentUser;
+      if (!adminUser) {
+        alert("Error: No hay un administrador autenticado.");
+        return;
+      }
 
-      console.log("Creando usuario:", email);
+      console.log("Administrador actual:", adminUser.email);
 
-      // Crear el usuario en Firebase Auth sin cambiar la sesión
+      // Crear el nuevo usuario en Firebase Authentication
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
@@ -57,13 +60,15 @@ export const renderCrearUsuario = (dashboardContent) => {
       await setDoc(doc(db, "usuarios", user.uid), {
         nombre,
         email,
-        rol,
+        rol
       });
 
       console.log("Usuario creado correctamente:", user.email);
+
+      // Mostrar mensaje de éxito sin cambiar de ventana
       alert("Usuario creado correctamente");
 
-      // 🔥 Limpiar el formulario sin afectar la sesión
+      // Limpiar el formulario para que se pueda ingresar otro usuario
       form.reset();
 
     } catch (error) {
@@ -72,6 +77,7 @@ export const renderCrearUsuario = (dashboardContent) => {
     }
   });
 
+  // ✅ MANTIENE FUNCIONALIDAD DEL BOTÓN "VOLVER AL PANEL"
   document.getElementById("volver-panel").addEventListener("click", () => {
     import("./adminDashboard.js").then(({ renderAdminDashboard }) => {
       renderAdminDashboard(dashboardContent);

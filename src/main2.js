@@ -2,13 +2,13 @@ import { auth, db } from "./firebase.js";
 import { doc, getDoc } from "firebase/firestore";
 import { signOut, onAuthStateChanged } from "firebase/auth";
 import { renderAdminDashboard } from "./adminDashboard.js";
-import { renderInternalDashboard } from "./internalDashboard.js";
 import { renderExternalDashboard } from "./externalDashboard.js";
 import { renderLogin } from "./login.js";
 
 document.addEventListener("DOMContentLoaded", () => {
   console.log("DOM completamente cargado.");
   window.usuarioActual = null; // No cargar usuario automáticamente
+  window.evitarRedireccion = false; // 🔥 Variable para evitar el cambio de sesión en creación de usuario
 
   // 🔹 Iniciar mostrando el login en limpio SIEMPRE
   renderLogin();
@@ -52,9 +52,6 @@ document.addEventListener("DOMContentLoaded", () => {
       case "administrador":
         renderAdminDashboard(dashboardContent);
         break;
-      case "interno":
-        renderInternalDashboard(dashboardContent);
-        break;
       case "externo":
         renderExternalDashboard(dashboardContent);
         break;
@@ -79,7 +76,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // 🔹 Escuchar cambios en la autenticación
   onAuthStateChanged(auth, async (user) => {
-    if (user) {
+    if (user && !window.evitarRedireccion) {
       console.log("Usuario autenticado:", user.email);
 
       try {
@@ -116,5 +113,8 @@ document.addEventListener("DOMContentLoaded", () => {
     } else {
       console.log("No hay usuario autenticado.");
     }
+
+    // 🔥 Restablecer la variable después de evitar la redirección
+    window.evitarRedireccion = false;
   });
 });

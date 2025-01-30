@@ -3,6 +3,7 @@ import { doc, getDoc } from "firebase/firestore";
 import { signOut, onAuthStateChanged } from "firebase/auth";
 import { renderAdminDashboard } from "./adminDashboard.js";
 import { renderExternalDashboard } from "./externalDashboard.js";
+import { renderTablaClientes } from "./mostrarClientes.js"; // 🔥 Agregado para los usuarios internos
 import { renderLogin } from "./login.js";
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -55,9 +56,13 @@ document.addEventListener("DOMContentLoaded", () => {
       case "externo":
         renderExternalDashboard(dashboardContent);
         break;
+      case "interno": // 🔥 Si el usuario es interno, redirigir a mostrarClientes.js
+        renderTablaClientes(dashboardContent);
+        break;
       default:
         console.error("Rol desconocido:", rol);
-        dashboardContent.innerHTML = `<p class="text-danger">Acceso denegado. Rol desconocido.</p>`;
+        alert("Error: No tienes permisos para acceder.");
+        cerrarSesion();
     }
   };
 

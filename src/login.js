@@ -70,8 +70,10 @@ export const renderLogin = () => {
   });
 };
 
-// Función para redirigir a la vista correspondiente según el rol
+// 🔹 Función para redirigir según el rol
 const redirigirSegunRol = (rol) => {
+  console.log(`Redirigiendo al módulo según rol: ${rol}`);
+
   switch (rol) {
     case "administrador":
       import("./adminDashboard.js").then(({ renderAdminDashboard }) => {
@@ -79,9 +81,9 @@ const redirigirSegunRol = (rol) => {
       });
       break;
     case "interno":
-    case "externo":  // 🔥 Ambos roles van a mostrarClientes.js
-      import("./mostrarClientes.js").then(({ renderMostrarClientes }) => {
-        renderMostrarClientes();
+    case "externo":
+      import("./mostrarClientes.js").then(({ renderTablaClientes }) => {
+        renderTablaClientes(document.getElementById("app"));
       });
       break;
     default:

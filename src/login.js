@@ -76,16 +76,26 @@ const redirigirSegunRol = (rol) => {
 
   switch (rol) {
     case "administrador":
-      import("./adminDashboard.js").then(({ renderAdminDashboard }) => {
-        renderAdminDashboard();
-      });
+      import("./adminDashboard.js")
+        .then(({ renderAdminDashboard }) => {
+          renderAdminDashboard();
+        })
+        .catch(error => console.error("Error al importar adminDashboard.js:", error));
       break;
+
     case "interno":
     case "externo":
-      import("./mostrarClientes.js").then(({ renderTablaClientes }) => {
-        renderTablaClientes(document.getElementById("app"));
-      });
+      import("./mostrarClientes.js")
+        .then((module) => {
+          if (module.renderTablaClientes) {
+            module.renderTablaClientes(document.getElementById("app"));
+          } else {
+            console.error("Error: renderTablaClientes no está definido en mostrarClientes.js");
+          }
+        })
+        .catch(error => console.error("Error al importar mostrarClientes.js:", error));
       break;
+
     default:
       console.error("Rol desconocido:", rol);
       alert("Acceso denegado. Rol desconocido.");

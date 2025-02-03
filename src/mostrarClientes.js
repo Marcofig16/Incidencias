@@ -16,11 +16,14 @@ export const renderTablaClientes = async (dashboardContent) => {
     dashboardContent.appendChild(tablaClientes);
   }
 
+  // 🔥 Verificar si el usuario es administrador
+  const esUsuarioAdministrador = window.usuarioActual?.rol === "administrador";
+
   tablaClientes.innerHTML = `
     <div class="d-flex justify-content-between align-items-center mb-3">
       <div class="d-flex align-items-center">
         <button id="btn-agregar-cliente" class="btn btn-primary me-2">Agregar Cliente</button>
-        <button id="btn-volver-panel" class="btn btn-secondary me-2">Volver al Panel</button>
+        ${esUsuarioAdministrador ? `<button id="btn-volver-panel" class="btn btn-secondary me-2">Volver al Panel</button>` : ""}
         <select id="criterio-buscador" class="form-select me-2" style="width: 150px;">
           <option value="nombre">Nombre</option>
           <option value="codigo">ID</option>

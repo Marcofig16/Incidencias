@@ -2,19 +2,17 @@ import { auth, db } from "./firebase.js";
 import { doc, getDoc } from "firebase/firestore";
 import { signOut, onAuthStateChanged } from "firebase/auth";
 import { renderAdminDashboard } from "./adminDashboard.js";
-import { renderExternalDashboard } from "./externalDashboard.js";
-import { renderTablaClientes } from "./mostrarClientes.js"; // 🔥 Agregado para los usuarios internos
+import { renderTablaClientes } from "./mostrarClientes.js"; // 🔥 Usado para "interno" y "externo"
 import { renderLogin } from "./login.js";
 
 document.addEventListener("DOMContentLoaded", () => {
   console.log("DOM completamente cargado.");
-  window.usuarioActual = null; // No cargar usuario automáticamente
-  window.evitarRedireccion = false; // 🔥 Variable para evitar el cambio de sesión en creación de usuario
+  window.usuarioActual = null;
+  window.evitarRedireccion = false;
 
-  // 🔹 Iniciar mostrando el login en limpio SIEMPRE
+  // 🔹 Iniciar mostrando el login siempre
   renderLogin();
 
-  // 🔹 Función para renderizar el dashboard según el rol del usuario
   const renderDashboard = (rol) => {
     const app = document.getElementById("app");
     if (!app) return;
@@ -53,10 +51,8 @@ document.addEventListener("DOMContentLoaded", () => {
       case "administrador":
         renderAdminDashboard(dashboardContent);
         break;
-      case "externo":
-        renderExternalDashboard(dashboardContent);
-        break;
-      case "interno": // 🔥 Si el usuario es interno, redirigir a mostrarClientes.js
+      case "interno":
+      case "externo": // 🔥 Ambos roles van a mostrarClientes.js
         renderTablaClientes(dashboardContent);
         break;
       default:
@@ -119,7 +115,6 @@ document.addEventListener("DOMContentLoaded", () => {
       console.log("No hay usuario autenticado.");
     }
 
-    // 🔥 Restablecer la variable después de evitar la redirección
     window.evitarRedireccion = false;
   });
 });
